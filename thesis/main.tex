@@ -1,0 +1,511 @@
+\documentclass[12pt]{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Autonomous Trajectory Tracking Control for a fixed-wing UAV}
+\author{John C. Oula}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+ abstract.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+Unmanned aerial vehicles (UAVs) have increasingly been extended in both military and civilian fields over the past years. UAVs specifically play an important role in military applications as seen in surveillance, monitoring and battlefield damage assessment. UAVs are also used in remote sensing, Geo-mapping, transportation and exploration in the civilian field. The fact that these aerial vehicles are unmanned, it calls for a great integration of autonomous systems that could accurately guide and control the UAV along predefined trajectories for specific missions in different flight conditions or regimes. Considering the external conditions that UAVs operate in, it is inevitable for it to come across some uncertainties and disturbances such as wind gusts and signal interference. By definition, a disturbance is an external or internal influence that affects the behavior of a system, and that is not accounted for in the system model. UAVs are both highly non-linear and coupled systems with uncertainties such as actuator faults, sensor noises and control signal delay. For a UAV to fly autonomously in an unpredictable environment with unpredictable disturbances, classical feedback control systems fall short and may lead to instability hence loss of the UAV or reduced performance. 
+With regards to classical control methods, several control schemes have been employed in UAVs in the past. Gain scheduling, a common technique for controlling nonlinear systems with dynamics changing from one operating condition to another, was previously widely used in flight control systems. Gain scheduling can be time-consuming and also expensive due to the need for flight tests to get relevant data of the operating conditions. 
+Basically, flight missions achieved by classical control are relatively simple. As a result, for modern UAVs, nonlinear control techniques are more appealing and competitive in improving flight performance and reducing workload for flight engineers[4].
+Nonlinear dynamic inversion technique is able to provide a straightforward means of deriving control laws for nonlinear systems. This approach requires that a system has at least as many inputs as the controlled states, which is normally not the case with many fixed-wing UAVs because they belong to a family of under-actuated systems. Hence, the conventional flight control problem is formulated as a two timescale problem, which, in turn, forms an inner-outer loop control structure to solve the under-actuation problem however, stability analysis for such a control structure may pose to be challenging[4]. Other control techniques incorporated in UAVs include back-stepping. 
+The above mentioned control techniques lack robustness and adaptation due to the fact that they are usually very sensitive to any variation of model parameters. Accurate modelling of UAV dynamics can hardly be established and also some external disturbances can not be measured[4]. For this reason, UAVs’ control systems should be designed to account for the ever-changing operating conditions, in other words, they should be adaptable and robust to uncertainties and unpredictable disturbances. For instance, small UAVs become significantly sensitive to wind since its magnitude may be comparable with the UAVs speed [5].
+Extensive research has been done on adaptive controls in UAVs, specifically on quad-rotor UAVs as oppose to fixed-wing UAVs over the past few years. Several control schemes have been proposed, designed, simulated and tested. In [1], a Disturbance Accommodating Controller (DAC) was developed and compared to a standard LQR controller which showed that the DAC had a superior disturbance rejection over the LQR controller. Moreover, a direct adaptive controller was developed and showed that it is better suited than the DAC when there are significant modeling errors. The overall results show that the adaptive controller was able to accommodate for 20\% error in the stability coefficients. This proves that direct adaptive control can enable trajectory tracking in cases where there are both significant uncertainties in the external disturbances and considerable error in the UAV model [1]. An MRAC based on Radial Basis Function Neural Networks of quad-rotor was developed and showed that it had better control quality and enhanced the adaptive ability of an MRAC controller to overcome dynamically changing moment of inertia[2]. The results reveal that the new adaptive approach demonstrates improved tracking performance under parameters uncertainty compared to the classical MRAC[2], but more investigation needs to be done on disturbance rejection. In [6], a robust control algorithm using sliding modes is proposed for the efficient regulation on trajectory tracking, in the nonlinear multi-variable quad rotor system model, that ensures the asymptotic convergence to a desired trajectory in the presence of uncertainties and external disturbances. In [7], an adaptive control based on switching logic for a fixed-wing UAV in normal flight condition at a fixed height with parametric uncertainty is designed. Furthermore, in [8], a hybrid dynamic inversion based MRAC architecture where the reference command is shaped using Model Predictive Control (MPC) is proposed and validated through flight tests.
+Different system modelling approaches have been used in previous works which consist of longitudinal model approach - where the airspeed, pitch dynamics and angle of attack are controlled, path following model approach where desired (x, y) and (x, y, z) positions must be achieved and six Degrees-of-Freedom model approach. Each modelling approach comes with its own limitations or drawbacks. According to [3], studying longitudinal model and path-following problem separately, inherits the problem of not considering the full control of the plane. Whereas in the path-following control the airspeed and aerodynamics are not considered, in the longitudinal approach the steering of the path is not taken into account while investigating the 6-DOF model-based control usually results in complex controls that includes a great quantity of parameters and terms that makes the implementation in real UAVs a complex task. In practice, a highly accurate model is very difficult to achieve [2].
+This research aims to study autonomous trajectory tracking control system in fixed-wing UAVs using an adaptive control scheme, namely, Model Reference Adaptive Control and a sliding mode control scheme independently, comparing which control technique has better tracking performance and is more computationally efficient. Model Reference Adaptive Control (MRAC) has emerged as a popular control approach for UAVs due to its ability to dynamically adjust control parameters in real-time to achieve the desired performance. MRAC attempts to ensure that the controlled states track the output of an appropriately chosen reference model[9]. Sliding mode control (SMC) is a nonlinear control method that alters the dynamics of a nonlinear system by applying a discontinuous control signal that forces the system to "slide" along a cross-section of the system's normal behavior. The main attractions of sliding mode controller are in-variance to matched uncertainties, model order reduction, simplicity in design and robustness against perturbations[10].
+
+Recent advances in machine learning and data-driven methods, as well as emerging sensing and perception capabilities from robotics, show a promising technical pathway to build more autonomous and intelligent UAV systems by allowing them to learn from experience and perceive the environment[3]. There is a large vigorous set of activities in this area over the last five to ten years, especially at the intersection of parameter learning, reinforcement learning, neural networks, and adaptive control[8].
+
+\subsection{Outline of the thesis}
+\textbf{Chapter 1} provides an overview of the thesis work, introducing the general concepts of the problem understudy and motivations. 
+
+\textbf{Chapter 2} focuses on derivation of a suitable dynamic model of the UAV. Both non-linear and linear equations of motion are explained in \textbf{chapter 2}.
+
+\textbf{Chapter 3} explains the procedure followed in order to design the controller.
+
+\textbf{Chapter 4} explains simulation of the UAV model and controller in Matlab/Simulink. Simulation results will be later covered in \textbf{chapter 5}.
+
+Finally, \textbf{chapter 6} summarizes the work and discusses the implication of the research and points out the main contribution along with the description of possible future extensions.
+
+\section{UAV Model}
+
+\subsection{Coordinate frames}
+The dynamic model used in this paper is a linearized, state-space model derived from a 3 degree-of-freedom(3-DoF) nonlinear model of the Wulung UAV. The BPPT Wulung UAV is a fixed-wing platform type of unmanned aerial vehicle developed by Agency for Assessment and Application of Technology (BPPT), 
+Indonesia to perform various medium-range autonomous flight missions such as monitoring, search and rescue, weather modification, aerial photography, reconnaissance, etc. Wulung UAV has a maximum 
+take-off weight of 120 kg, wing span of 6.3 m, fuselage length of 4.32 m and engine power of 20 HP with flight range of 200 km. The UAV model is assumed to be a rigid and symmetric body including the following 5 states:
+
+\begin{equation}
+    \mathbf{X} = \begin{bmatrix} u \ w \ q \ \theta  \ h\end{bmatrix}^T
+\end{equation}
+
+
+where $u, w$ denote the body-referenced velocity components, $q$ represents the body-referenced angular velocity components, $\theta$ is the pitch angle and $h$ as the altitude.
+
+The UAV model includes the following control inputs:
+\begin{equation}
+    \mathbf{U} = \begin{bmatrix} \delta_e \ \delta_t  \end{bmatrix}^T
+\end{equation}
+where $\delta_e$ is the elevator deflection, $\delta_t$ represents the thrust control. The geometry properties of the UAV and the aerodynamic coefficients are provided in Tables \ref{tab:uav_params} and \ref{tab:aero_coeffs} respectively.
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{images/Aerosonde-sea.jpeg}
+\caption{\label{fig:1}Aerosonde Unmanned Aerial Vehicle}
+\end{figure}
+\subsection{Nonlinear equations of motion}
+There are two commonly used techniques for deriving equations of motion in flying
+vehicles: Euler-Lagrange method and Newton’s approach[12]. This study shall adopt Newton's approach. The derivation of equations of motion is centered around Newton's Second Law of motion. These equations establish relationships between forces acting in the body frame $(F_X, F_Y, F_Z)$, moments $(L, M, N)$, and the linear $(u, v, w)$ and angular $(p, q, r)$ velocities of the aircraft.
+The UAV used in this study has a low speed range hence compressibility and elasticity effects can be ignored and the aerial vehicle can take the assumption of a rigid body with 6 DoF.
+ General force and moment equations are derived from the assumption that the UAV is symmetric. The nonlinear longitudinal dynamics of the UAV can be expressed by the following set of differential equations:
+% \begin{center}
+% $ \dot{u} $ = $rv$ - $qw$ + $g_x$ + $a_x$ \\
+% $ \dot{v} $ = $pw$ - $ru$ + $g_y$ + $a_y$ \\ 
+% $ \dot{w} $ = $qu$ - $pv$ + $g_z$ + $a_z$ \\
+% \vspace{10pt}
+
+% $g_x$ = -$g$ \sin{(\theta)} \\
+% $g_y$ = $g$\sin{(\phi)}\cos{(\theta)} \\
+% $g_z$ = $g$\cos{(\phi)}\cos{(\theta)}  \\ 
+% \end{center}
+    
+% \noindent
+% The longitudinal states and inputs are defined as
+% \[
+% \dot{x}_{\text{lon}}\defeq(u, w, q, \theta, h)^{\top} 
+% \qquad
+% u_{\text{lon}} \defeq (\delta_e, \delta_t)^{\top}
+% \]
+\begin{equation}
+        \dot{u} &= -qw - g\sin\theta
+        + \frac{\rho (u^2+w^2) S}{2\mass} [
+            C_{X_0}
+            + C_{X_{\alpha}} \tan^{-1}(\frac{w}{u})
+            + C_{X_{\delta_e}} \delta_e
+            ]
+        + \frac{\rho \sqrt{u^2+w^2} S}{4\mass} C_{X_{q}}c q \\ 
+        +  \frac{\rho S_{\text{prop}}}{2\mass}C_{\text{prop}}[
+        (k\delta_t)^2-(u^2+w^2)
+        ] \\
+\label{eq:linear-lon-wdot}
+\end{equation}
+
+\begin{equation}
+        \dot{w} &= qu + g\cos\theta
+        + \frac{\rho (u^2+w^2) S}{2\mass} [
+            C_{Z_0}
+            + C_{Z_{\alpha}} \tan^{-1}(\frac{w}{u})
+            + C_{Z_{\delta_e}} \delta_e
+            ]
+        \notag\\ 
+        + \frac{\rho \sqrt{u^2+w^2} S}{4\mass} C_{Z_{q}} c q
+\end{equation}
+
+\begin{equation}
+    \dot{q} &=  \frac{1}{2J_y}\rho (u^2+w^2) c S[
+              C_{m_{0}}
+            + C_{m_{\alpha}} \tan^{-1}(\frac{w}{u})
+            + C_{m_{\delta_e}} \delta_e
+            ]
+            +\frac{1}{4J_y}\rho \sqrt{u^2+w^2} S C_{m_{q}}c^2 q
+             \\
+\end{equation}
+\begin{equation}
+       \dot{\theta} &=  q \\
+\end{equation}
+\begin{equation}
+        \dot{h} &= u\sin\theta -w \cos\theta
+\end{equation}
+
+ 
+
+
+
+
+
+\vspace{10}
+Assuming that the lateral states are zero (i.e., $\Phi = p = r = \beta = v = 0$) and the wind-speed is zero, substituting
+
+\begin{equation}
+    \alpha = \tan^{-1}{(\frac{w}{u})} 
+\end{equation}
+
+\begin{equation}
+    V_a = \sqrt{u^2 + w^2}
+\end{equation}
+from equation (2.7) gives\\
+
+Applying small-disturbance theory in equations 3 to 6 results in the following linearized longitudinal equations. \\
+In order to easily solve the equation of motion for the various state variables decoupling is applied to the original equation of motion
+
+
+
+where we have used equation (2.8) and the fact that v = 0.  By substituting numerical values of the stability derivatives of section 2.3.2 into matrices A and B of
+equations 2.22 and 2.23 following state, and input matrices had been obtained
+
+\begin{equation}
+\begin{pmatrix}
+\dot{u} \\
+\dot{w} \\
+\dot{q} \\
+\dot{\theta} \\
+\dot{h} \\
+\end{pmatrix} =
+  \begin{pmatrix}
+    X_u & X_w & X_q & -g\cos\theta^{\ast} & 0 \\
+    Z_u & Z_w & Z_q & -g\sin\theta^{\ast} & 0 \\
+    M_u & M_w & M_q & 0 & 0 \\
+    0   & 0   & 1   & 0 & 0 \\
+    \sin\theta^{\ast} & -\cos\theta^{\ast} & 0 & u^{\ast}\cos\theta^{\ast} +
+    w^{\ast}\sin\theta^{\ast} & 0
+  \end{pmatrix}
+\begin{pmatrix}
+u \\
+w \\
+q \\
+\theta \\
+h \\
+\end{pmatrix}
++
+\begin{pmatrix}
+  X_{\delta_e} & X_{\delta_t} \\
+  Z_{\delta_e} & 0 \\
+  M_{\delta_e} & 0 \\
+  0            & 0 \\
+  0            & 0
+  \end{pmatrix}
+\begin{pmatrix}
+\dot{\delta}_e \\
+\dot{\delta}_t
+\end{pmatrix}
+\end{equation}
+
+\subsection{Linearized Equations of motion}
+\subsubsection{Trimming}
+Trim conditions refer to the state of balance or equilibrium that an aerial vehicle achieves in flight. Trim conditions ensure that the aircraft is stable and can maintain a constant altitude, airspeed, and attitude without the need for constant adjustments from the pilot. Under a trimmed condition, there should be no net moments or forces acting on the center of mass of the UAV, resulting in no changes in the motion variables in time; that is, they all should be zero or constant.
+
+
+The initial flight conditions used for trimming the Aerosonde model are listed in Table \ref{tab:initial conditions} (initial state vector) and the data obtained for the trimmed flight are summarised in Table \ref{tab:trimmed conditions}.
+
+$MATLAB^®$ function $linmodv5$ was used on the nonlinear model of the UAV about the equilibrium points obtained by trimming, to linearize the UAV model which takes the state space form of:
+
+
+\begin{equation}
+    \dot{x} = \boldsymbol{A}x +\boldsymbol{B}u
+\end{equation}
+
+The linearization process involves calculating the Jacobian matrices of the system dynamics with respect to the states and control inputs around a specific operating point (usually a trim condition).
+\begin{table}
+\centering
+\begin{tabular}{ll}
+ State  & Trim Value \\\hline
+$u$ & 25 m/s \\
+$w$ & 0 m/s \\
+$q$ & 0 rad/s \\
+$\theta$ & 0 rad \\
+$h$ & 1000 m \\
+\end{tabular}
+\caption{Initial state vector, $X_0$}
+\label{tab:initial conditions}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{ll|ll}
+ State  & Trim Value & Input & Value \\\hline
+$u$ & 24.55 m/s & \delta_e  & -0.0782\\
+$w$ & 1.3043 m/s & \delta_t  & -0.0740\\
+$q$ & 0.2625 rad/s \\
+$\theta$ & 0.1117 rad \\
+$h$ & 999.77 m \\
+\end{tabular}
+\caption{Trimmed conditions for the states and inputs}
+\label{tab:trimmed conditions}
+\end{table}
+
+It can be concluded from the values of the trimmed state derivatives, \dot{x} , that the trim 
+quality is very well, satisfying the condition of trim given by Equation (3.4) 
+originated from Equation (3.1)
+
+Given the general nonlinear system of equations 
+
+\begin{equation}
+    \dot{x} = f(x, u)
+\end{equation}
+
+
+where $x \in \mathbb{R}^n$ is the n-dimensional state and $u \in \mathbb{R}^m$ is the time varying control input vector and suppose that a trim input $u^*$ and state $x^*$ can be found such that \\
+
+\begin{equation}
+    \dot{x^*}  = f(x^*, u^*) = 0. \\ 
+\end{equation}
+
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{cc} \toprule
+Longitudinal & Formula  \\ \midrule  \hline
+\\
+$X_u$ &
+    $\frac{u^{\ast}\rho S}{\mass} [C_{X_0}
+    + C_{X_\alpha}\alpha^{\ast}
+    + C_{X_{\delta_e}} \delta^{\ast}_e ]
+    - \frac{\rho S w^{\ast} C_{X_{\alpha}}}{2\mass}
+    + \frac{\rho S c C_{X_q} u^{\ast}q^{\ast}}{4 m V^{\ast}_a}
+    - \frac{\rho S_{\text{prop}}C_{\text{prop}} u^{\ast}}{\mass}$
+    \\
+$X_w$ &
+    $-q^{\ast}
+    + \frac{w^{\ast}\rho S}{\mass}[C_{X_0} + C_{X_{\alpha}}\alpha^{\ast}
+    + C_{X_{\delta_e}}\delta^{\ast}_e]
+    + \frac{\rho S c C_{X_q} w^{\ast} q^{\ast}}{4 m V^{\ast}_a}
+    + \frac{\rho S C_{X_{\alpha}} u^{\ast}}{2\mass}
+    - \frac{\rho S_{\text{prop}}C_{\text{prop}} w^{\ast}}{\mass}$
+    \\
+$X_q$ &
+    $-w^{\ast} + \frac{\rho V^{\ast}_a S C_{X_q}c}{4\mass}$
+    \\
+$X_{\delta_e}$ &
+    $\frac{\rho V^{\ast 2}_a S C_{X_{\delta_e}}}{2\mass}$
+    \\
+$X_{\delta_t}$ &
+    $\frac{\rho S_{prop} C_{prop} k^2 \delta^{\ast}_t }{\mass}$
+    \\
+$Z_u$ &
+    $q^{\ast}
+    + \frac{u^{\ast}\rho S}{\mass}[C_{Z_0} + C_{Z_{\alpha}}\alpha^{\ast}
+    + C_{Z_{\delta_e}}\delta^{\ast}_e]
+    - \frac{\rho S C_{Z_{\alpha}} w^{\ast}}{2\mass}
+    + \frac{u^{\ast}\rho S C_{Z_q}cq^{\ast}}{4mV^{\ast}_a}$
+    \\
+$Z_w$ &
+    $\frac{w^{\ast}\rho S}{\mass}[C_{Z_0} + C_{Z_{\alpha}}\alpha^{\ast}
+    + C_{Z_{\delta_e}}\delta^{\ast}_e ]
+    + \frac{\rho S C_{Z_{\alpha}} u^{\ast}}{2\mass}
+    + \frac{\rho w^{\ast} S c C_{Z_q} q^{\ast}}{4mV^{\ast}_a}$
+    \\
+$Z_q$ &
+    $u^{\ast} + \frac{\rho V^{\ast}_a S C_{Z_q} c}{4\mass}$
+    \\
+$Z_{\delta_e}$ &
+    $\frac{\rho V^{\ast 2}_a S C_{Z_{\delta_e}}}{2\mass}$
+    \\
+$M_u$ &
+    $\frac{u^{\ast}\rho  S c}{J_y}[ C_{m_0} + C_{m_{\alpha}}\alpha^{\ast}
+    + C_{m_{\delta_e}}\delta^{\ast}_e ]
+    -\frac{\rho S c C_{m_{\alpha}} w^{\ast}}{2J_y}
+    + \frac{\rho S c^2 C_{m_q} q^{\ast}u^{\ast}}{4J_yV^{\ast}_a}$
+    \\
+$M_w$ &
+    $\frac{w^{\ast}\rho S  c}{J_y}[ C_{m_0} + C_{m_{\alpha}}\alpha^{\ast}
+    + C_{m_{\delta_e}}\delta^{\ast}_e ]
+    +\frac{\rho S c C_{m_{\alpha}} u^{\ast}}{2J_y}
+    + \frac{\rho S c^2 C_{m_q} q^{\ast}w^{\ast}}{4J_yV^{\ast}_a}$
+    \\
+$M_q$ &
+    $\frac{\rho V^{\ast}_a S c^2 C_{m_q}}{4J_y}$
+    \\
+$M_{\delta_e}$ &
+    $\frac{\rho V^{\ast 2}_a S c C_{m_{\delta_e}}}{2J_y}$
+    \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection{Linearized model}
+
+In this section, the linearized longitudinal equations of motion will be presented adopting the small disturbance theory. The main idea in small-disturbance theory is to linearize the non-linear model developed in the preceding section, around a steady-state condition well known as trimmed flight in the field of aeronautics. It is assumed that at any given time, the instantaneous value of the UAV state and control variables may be represented by the trim value (denoted by a subscript $_0$) and a small perturbation disturbance ($\Delta$). By applying the same reasoning, it is possible to determine the slight variations in each force and moment element (∆X, ∆Y, ∆Z, ∆L, ∆M, ∆N) due to variations in a specific variable (u, w...). \\
+
+In this study, predetermined trim values were obtained from [13] and are shown in Table....where the nonlinear UAV model was trimmed about a wings-level, constant-altitude 
+trim condition with velocity $V_A$ = 17 m/s and altitude h=100m.
+
+In a straight and level flight, the nominal control settings $u^*$ are determined 
+
+which maintain steady state flight with wings level at constant altitude, airspeed, and heading
+
+
+
+
+
+
+\section{Model Reference Adaptive Control}
+Direct Model Reference Adaptive Control (Direct MRAC)
+is a control scheme that enables a system to adapt its control
+parameters in response to changes in its dynamics. In Direct
+MRAC, the controller parameters are directly estimated to
+make the system track a reference model. The reference model
+can be either a desired response or the dynamics of a similar
+stable system. The estimation of the controller parameters is
+carried out by minimizing the error between the output of the
+system and the output of the reference model.
+
+The control objective is to make the velocity V and the altitude h track the reference signals $V_r$ and $h_r$ asymptotically, from the reference model even if there exists parametric uncertainties and disturbances.
+
+\begin{equation}
+    \dot{x} = \boldsymbol{A}x +\boldsymbol{B}u
+        \label{eq:plant dynamics}
+\end{equation}
+
+where \boldsymbol{A} is the open-loop plant matrix, \boldsymbol{B} is the control matrix, $x$ is the state vector and $u$ is the input to the UAV. 
+
+\begin{equation}
+    \dot{x}_m = \boldsymbol{A_m} x_m + \boldsymbol{B_m} r
+        \label{eq:reference model dynamics}
+\end{equation}
+
+In order for such a control solution to exist, the model matching conditions must
+hold:
+
+\begin{equation}
+    \boldsymbol{A} + B \Delta K_x^T = A_\text{ref}
+\end{equation}
+\begin{equation}
+    B \Delta K_r^T = B_\text{ref}
+       
+\end{equation}
+\begin{equation}
+    K_r^T = -(CA_{ref}^-B)^-1
+\end{equation}
+
+where $K_{x}$ and Kr denote the ideal unknown constant feedback and feed-forward gain
+matrices, respectively
+
+For the plant model given by \ref{eq:plant dynamics} and for the reference model
+given by \ref{eq:reference model dynamics}, the control input can be designed as shown:-
+\begin{equation}
+    u =  K_x^T x +  K_r^T r
+    \label{eq: control input}
+\end{equation}
+where $K_x^T$ and $K_r^T$ are the controller parameters which will be
+estimated. Using \ref{eq: control input} in \ref{eq:plant dynamics}, the plant dynamics can be written
+as:
+\begin{equation}
+    \dot{x} = \boldsymbol{A}x +\boldsymbol{B}( K_x^T x +  K_r^T r)
+\end{equation}
+
+\begin{equation}
+    \dot{x} = (\boldsymbol{A} +\boldsymbol{B}K_x^T)x +  BK_r^T r
+    \label{eq: equation with u substituted}
+\end{equation}
+
+Ideally, for perfect tracking $u$ has to be chosen such that $\dot{x} = \dot{x_m}$ . Hence, from \ref{eq:reference model dynamics} and \ref{eq: equation with u substituted}, we can write:-
+\begin{equation}
+    \boldsymbol{A}  + \boldsymbol{B}K_x^T = \boldsymbol{A_m}
+    \label{eq: matching conds. 1}
+\end{equation}
+\begin{equation}
+    \boldsymbol{B}K_r^T = \boldsymbol{B_m}
+    \label{eq: matching conds. 2}
+\end{equation}
+Equations \ref{eq: matching conds. 1} and \ref{eq: matching conds. 2} are known as matching conditions.
+
+For controller design, estimated values of controller parameters are used and are updated continuously till the tracking error goes to zero. Let $K_{x}^T$ and $K_{r}^T$ be the estimated values of controller parameters. Then the control input $u$ will
+be:-
+\begin{equation}
+    u =  \hat{K_x^T} x +  \hat{K_r^T} r
+    \label{eq: control input w/ param est.}
+\end{equation}
+First it’s good thing to choice to use only diagonal matrixes in order to simplify the control 
+design. 
+
+The tracking error and parameter estimation errors are given
+by:-
+
+\subsection{Reference Model}
+The reference model with nominal specification is formulated to have the following performance specification:
+
+A Linear Quadratic Regulator design approach was taken to obtain gains K that would yield the reference model $A_m$
+\section{Sliding Mode Control}
+
+\section{Simulation and Analysis}
+
+
+\section{Appendix}
+\begin{table}
+\centering
+\begin{tabular}{ll}
+ Longitudinal \\
+ Coefficients & Value \\\hline
+
+$C_{L_0}$ & -0.05 \\
+$C_{D_0}$ & 4.9 \\
+$C_{m_0}$ & 4.9 \\
+$C_{L_\alpha}$ & 4.9 \\
+$C_{D_\alpha}$ & 4.9 \\
+$C_{m_\alpha}$ & 4.9 \\
+$C_{L_q}$ & 4.9 \\
+$C_{D_q}$ & 4.9 \\
+$C_{m_q}$ & 4.9 \\
+$C_{L_\delta_e}$ & 4.9 \\
+$C_{D_{\delta_e}}$  & 4.9 \\
+$C_{m_{\delta_e}}$ & 4.9 \\
+$C_{prop}$ & 4.9 \\
+$M$ & 4.9 \\
+$\alpha_0$ & -2.1$^\circ$ \\
+\end{tabular}
+\caption{Aerodynamic coefficients for a propeller fixed-wing UAV}
+\label{tab:aero_coeffs}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{ll}
+$Parameter$ & $Value$  \\\hline
+m & 13.5 kg \\
+$J_x$ & 0.8244 kg-m^2  \\
+$J_y$ & 1.135 kg-m^2\\
+$J_z$ & 1.759 kg-m^2\\
+$J_{x_z}$ & 0.1204 kg-m^2\\
+S & 0.55 m^2\\
+$b$ & 2.8956 m\\
+$c$ & 0.18994 m\\
+$S_{prop}$  & 0.2027 m^2\\
+$\rho$ & 1.2682 kg/m^3\\
+$k_{motor}$  & 80\\
+$k_{T_p}$ & 0  \\
+$k_\Omega$ & 0 \\
+$e$ & 0.9 \\
+\end{tabular}
+\caption{Aerosonde parameters}
+\label{tab:uav_params}
+\end{table}
+
+
+\bibliographystyle{plain}
+\bibliography{sample}
+% [1] Prabhakar, Nirmit, "Direct Adaptive Control for a Trajectory Tracking UAV" (2018). Doctoral Dissertations and Master's Theses. 431.
+% https://commons.erau.edu/edt/431
+% [2]M. Liu, X. Dong, Q. Li and Z. Ren, "Model Reference Adaptive Control of a Quadrotor UAV based on RBF Neural Networks," 2018 IEEE CSAA Guidance, Navigation and Control Conference (CGNCC), Xiamen, China, 2018, pp. 1-6, doi: 10.1109/GNCC42960.2018.9019021.
+% [3]Flores, G.R., Flores, A., & Oca, A.M. (2019). A full controller for a fixed-wing UAV. ArXiv, abs/1903.03945.
+% [4]Z. Zuo, C. Liu, Q. -L. Han and J. Song, "Unmanned Aerial Vehicles: Control Methods and Future Challenges," in IEEE/CAA Journal of Automatica Sinica, vol. 9, no. 4, pp. 601-614, April 2022, doi: 10.1109/JAS.2022.105410.
+% [5]A. Brezoescu, T. Espinoza, P. Castillo, R. Lozano, Adaptive trajectory following for a fixed-wing UAV in presence of crosswind, J. Intelligent & Robotic Systems 69 (2013) 257-271.
+% [6]Salazar, Sergio, Ivan Gonzalez-Hernandez, Ricardo Lopez, and Rogelio Lozan, Simulationand robust trajectory-tracking for a Quadrotor UAV. Unmanned Aircraft Systems (ICUAS),2014 International Conference on. IEEE, 2014. 
+% [7]Nasab, H. M., & Navazani, N. (2016). Adaptive Control for Trajectory Tracking of an Unmanned Aerial Vehicle. In Advanced Engineering Forum (Vol. 17, pp. 101–110). Trans Tech Publications, Ltd. https://doi.org/10.4028/www.scientific.net/aef.17.101
+% [8]Anuradha M. Annaswamy, Alexander L. Fradkov, A historical perspective of adaptive control and learning, Annual Reviews in Control, Volume52, 2021, Pages 18-41, ISSN1367-5788,
+% https://doi.org/10.1016/j.arcontrol.2021.10.014. 
+% [9]Valavanis, K.P.; Vachtsevanos, G.J. Handbook of Unmanned Aerial Vehicles; Springer: Berlin/Heidelberg, Germany, 2015; Vol. 1.
+% [10]S. Kamal, A. Chalanga, Ramesh Kumar P. and B. Bandyopadhyay, "Multivariable continuous integral sliding mode control," 2015 International Workshop on Recent Advances in Sliding Modes (RASM), Istanbul, Turkey, 2015, pp. 1-5, doi: 10.1109/RASM.2015.7154646.
+
+\end{document}
